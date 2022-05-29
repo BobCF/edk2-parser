@@ -28,6 +28,8 @@ class DscGen(object):
             dsc_parser_dict[dsc_parser._Arch] = dsc_parser
         self.Set_Defines(dsc_parser_dict)
         self.Set_SkuIds(dsc_parser_dict)
+        self.Set_DefaultStores(dsc_parser_dict)
+        self.Set_Packages(dsc_parser_dict)
         self.Set_BuildOptions(dsc_parser_dict)
     
     def from_yaml(self, yaml_content):
@@ -43,6 +45,8 @@ class DscGen(object):
     def FormatDsc(self):
         self.txt += str(Sec_Defines(self.content.get("Defines")))
         self.txt += str(Sec_SkuIds(self.content.get("SkuIds")))
+        self.txt += str(Sec_DefaultStores(self.content.get("DefaultStores")))
+        self.txt += str(Sec_Packages(self.content.get("Packages")))
         self.txt += str(Sec_PcdsFeatureFlag(self.content.get("PcdsFeatureFlag")))
         self.txt += str(Sec_PcdsFixedAtBuild(self.content.get("PcdsFixedAtBuild")))
         self.txt += str(Sec_BuildOptions(self.content.get("BuildOptions")))
@@ -92,6 +96,22 @@ class DscGen(object):
             skuids[item[0]] = " | ".join((item[1], item[2])) if item[2] else item[1]
 
         self.content.update({"SkuIds":skuids})
+
+    def Set_DefaultStores(self, dsc_parser_dict):
+        dsc_parser = dsc_parser_dict.get("COMMON", list(dsc_parser_dict.values())[0])
+        defaultstores = OrderedDict()
+        for item in dsc_parser[DC.MODEL_EFI_DEFAULT_STORES]:
+            defaultstores[item[0]] = " | ".join((item[1], item[2])) if item[2] else item[1]
+
+        self.content.update({"DefaultStores":defaultstores})
+
+    def Set_Packages(self, dsc_parser_dict):
+        dsc_parser = dsc_parser_dict.get("COMMON", list(dsc_parser_dict.values())[0])
+        packages = []
+        for item in dsc_parser[DC.MODEL_META_DATA_PACKAGE]:
+            packages.append(item[0])
+
+        self.content.update({"Packages":packages})
 
     def Set_BuildOptions(self,dsc_parser_dict):
         '''
@@ -212,6 +232,35 @@ class Sec_SkuIds(object):
         for key, value in self.skuids.items():
             section_strlst.append(self.tab_sp + " | ".join((key,value)))
 
+        section_strlst.append('\r\n')
+        return '\r\n'.join(section_strlst)
+class Sec_DefaultStores(object):
+
+    def __init__(self, content):
+        self.defaultstores = content
+        self.tab_sp = "  "
+
+    def __str__(self):
+        section_strlst = []
+        section_strlst.append("[DefaultStores]")
+        for key, value in self.defaultstores.items():
+            section_strlst.append(self.tab_sp + " | ".join((key,value)))
+
+        section_strlst.append('\r\n')
+        return '\r\n'.join(section_strlst)
+
+class Sec_Packages(object):
+    
+    def __init__(self,content):
+        self.packages = content
+        self.tab_sp = "  "
+
+    def __str__(self):
+        section_strlst = []
+        section_strlst.append("[Packages]")
+        for item in self.packages:
+            section_strlst.append(self.tab_sp + item)
+  
         section_strlst.append('\r\n')
         return '\r\n'.join(section_strlst)
 

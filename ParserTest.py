@@ -54,11 +54,11 @@ def TestDscParser(dsc_path,WorkspaceDir):
     dsc_gen.from_parser(dsc_parser)
     print(dsc_gen.FormatDsc())
 
-    # for item in dsc_parser[MODEL_EFI_DEFAULT_STORES]:
-    #     print(item)
+    for item in dsc_parser[MODEL_EFI_DEFAULT_STORES]:
+        print(item)
 
-    # for item in dsc_parser[MODEL_META_DATA_PACKAGE]:
-    #     print(item)
+    for item in dsc_parser[MODEL_META_DATA_PACKAGE]:
+        print(item)
 
     # '''
     #     ['PcdLib', 'MdePkg/Library/BasePcdLibNull/BasePcdLibNull.inf', '', 'COMMON', 'COMMON', 'COMMON', 59, 107]
@@ -71,10 +71,10 @@ def TestDscParser(dsc_path,WorkspaceDir):
     #     ['INTEL', 'RELEASE_*_*_CC_FLAGS', '/D MDEPKG_NDEBUG', 'COMMON', 'COMMON', 'COMMON', 36, 68]
     #     ['MSFT', 'RELEASE_*_*_CC_FLAGS', '/D MDEPKG_NDEBUG', 'COMMON', 'COMMON', 'COMMON', 37, 69]
     # '''
-    for item in dsc_parser[MODEL_META_DATA_BUILD_OPTION,"COMMON"]:
-        print(item)
-    for item in dsc_parser[MODEL_META_DATA_BUILD_OPTION,"IA32",]:
-        print(item)
+    # for item in dsc_parser[MODEL_META_DATA_BUILD_OPTION,"COMMON"]:
+    #     print(item)
+    # for item in dsc_parser[MODEL_META_DATA_BUILD_OPTION,"IA32",]:
+    #     print(item)
 
 def TestInfParser(inf_path,WorkspaceDir):
     inf_parser = InfParser(PathClass(inf_path,WorkspaceDir),MODEL_FILE_INF,"IA32",
