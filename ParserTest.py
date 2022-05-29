@@ -5,6 +5,7 @@ from CommonDataClass.DataClass import *
 import Common.GlobalData as GlobalData
 from Common.MultipleWorkspace import MultipleWorkspace as mws
 import os
+from generators.MedaFileGenerator import DscGen
 
 
 def TestDscParser(dsc_path,WorkspaceDir):
@@ -37,22 +38,27 @@ def TestDscParser(dsc_path,WorkspaceDir):
         ['', 'SKUID_IDENTIFIER', 'DEFAULT', 'COMMON', 'COMMON', 'COMMON', 9, 24]
         ['', 'FLASH_DEFINITION', 'OvmfPkg/OvmfPkgIa32.fdf', 'COMMON', 'COMMON', 'COMMON', 10, 25]
     '''
-    for item in dsc_parser[MODEL_META_DATA_HEADER]:
-        print(item)
+    # for item in dsc_parser[MODEL_META_DATA_HEADER]:
+    #     print(item)
+    # print("--------------------------")
+    #['0', 'DEFAULT', '', 'COMMON', 'COMMON', 'COMMON', 57, 99]
+    # for item in dsc_parser[MODEL_EFI_SKU_ID]:
+    #     print(item)
+    # for item in dsc_parser[MODEL_META_DATA_DEFINE,"COMMON","COMMON"]:
+    #     print(item)
+    # print("--------------------------")
+    # for item in dsc_parser[MODEL_META_DATA_GLOBAL_DEFINE,"COMMON","COMMON"]:
+    #     print(item)
 
-    ['0', 'DEFAULT', '', 'COMMON', 'COMMON', 'COMMON', 57, 99]
-    for item in dsc_parser[MODEL_EFI_SKU_ID]:
-        print(item)
-    for item in dsc_parser[MODEL_META_DATA_DEFINE,"COMMON","COMMON"]:
-        print(item)
-    for item in dsc_parser[MODEL_META_DATA_GLOBAL_DEFINE,"COMMON","COMMON"]:
-        print(item)
+    dsc_gen = DscGen()
+    dsc_gen.from_parser(dsc_parser)
+    print(dsc_gen.FormatDsc())
 
-    for item in dsc_parser[MODEL_EFI_DEFAULT_STORES]:
-        print(item)
+    # for item in dsc_parser[MODEL_EFI_DEFAULT_STORES]:
+    #     print(item)
 
-    for item in dsc_parser[MODEL_META_DATA_PACKAGE]:
-        print(item)
+    # for item in dsc_parser[MODEL_META_DATA_PACKAGE]:
+    #     print(item)
 
     # '''
     #     ['PcdLib', 'MdePkg/Library/BasePcdLibNull/BasePcdLibNull.inf', '', 'COMMON', 'COMMON', 'COMMON', 59, 107]
@@ -65,8 +71,10 @@ def TestDscParser(dsc_path,WorkspaceDir):
     #     ['INTEL', 'RELEASE_*_*_CC_FLAGS', '/D MDEPKG_NDEBUG', 'COMMON', 'COMMON', 'COMMON', 36, 68]
     #     ['MSFT', 'RELEASE_*_*_CC_FLAGS', '/D MDEPKG_NDEBUG', 'COMMON', 'COMMON', 'COMMON', 37, 69]
     # '''
-    # for item in dsc_parser[MODEL_META_DATA_BUILD_OPTION]:
-    #     print(item)
+    for item in dsc_parser[MODEL_META_DATA_BUILD_OPTION,"COMMON"]:
+        print(item)
+    for item in dsc_parser[MODEL_META_DATA_BUILD_OPTION,"IA32",]:
+        print(item)
 
 def TestInfParser(inf_path,WorkspaceDir):
     inf_parser = InfParser(PathClass(inf_path,WorkspaceDir),MODEL_FILE_INF,"IA32",
