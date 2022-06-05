@@ -1,4 +1,3 @@
-
 ## @file
 # This file is used to check format of comments
 #
@@ -21,16 +20,14 @@ class DscGen(object):
         dsc_parser_dict = dict()
         if isinstance(dsc_parser,dict):
             dsc_parser_dict.update(dsc_parser)
-            if "COMMON" not in dsc_parser_dict:
-                dsc_parser_dict['COMMON'] = list(dsc_parser_dict.values())[0]
         else:
-            dsc_parser_dict['COMMON'] = dsc_parser
             dsc_parser_dict[dsc_parser._Arch] = dsc_parser
         self.Set_Defines(dsc_parser_dict)
         self.Set_SkuIds(dsc_parser_dict)
         self.Set_DefaultStores(dsc_parser_dict)
         self.Set_Packages(dsc_parser_dict)
         self.Set_BuildOptions(dsc_parser_dict)
+        self.Set_LibraryClasses(dsc_parser_dict)
     
     def from_yaml(self, yaml_content):
         ''' Import the yaml_content into dict'''
@@ -63,12 +60,12 @@ class DscGen(object):
 
     def FormatYaml(self):
         import yaml
-        self.txt = yaml.dump(self.content)
+        self.txt = yaml.dump(self.content, default_flow_style=False)
         return self.txt
 
     def FormatJson(self):
         import json
-        self.txt = json.dump(self.content)
+        self.txt = json.dumps(self.content,indent=2)
         return self.txt
 
     def Set_Defines(self,dsc_parser_dict):
@@ -78,11 +75,11 @@ class DscGen(object):
         macros = OrderedDict()
         edk_globals = OrderedDict()
         for item in dsc_parser[DC.MODEL_META_DATA_HEADER]:
-            keywords[item[1]] = item[2]
+            keywords[item.Value1] = item.Value2
         for item in dsc_parser[DC.MODEL_META_DATA_DEFINE,"COMMON","COMMON"]:
-            macros[item[1]] = item[2]
+            macros[item.Value1] = item.Value2
         for item in dsc_parser[DC.MODEL_META_DATA_GLOBAL_DEFINE,"COMMON","COMMON"]:
-            edk_globals[item[1]] = item[2]
+            edk_globals[item.Value1] = item.Value2
         
         defines_section["Defines"] = keywords
         defines_section["Defines"]['DEFINE'] = macros 
@@ -93,7 +90,7 @@ class DscGen(object):
         dsc_parser = dsc_parser_dict.get("COMMON", list(dsc_parser_dict.values())[0])
         skuids = OrderedDict()
         for item in dsc_parser[DC.MODEL_EFI_SKU_ID]:
-            skuids[item[0]] = " | ".join((item[1], item[2])) if item[2] else item[1]
+            skuids[item.Value1] = " | ".join((item.Value2, item.Value3)) if item.Value3 else item.Value2
 
         self.content.update({"SkuIds":skuids})
 
@@ -101,7 +98,7 @@ class DscGen(object):
         dsc_parser = dsc_parser_dict.get("COMMON", list(dsc_parser_dict.values())[0])
         defaultstores = OrderedDict()
         for item in dsc_parser[DC.MODEL_EFI_DEFAULT_STORES]:
-            defaultstores[item[0]] = " | ".join((item[1], item[2])) if item[2] else item[1]
+            defaultstores[item.Value1] = " | ".join((item.Value2, item.Value3)) if item.Value3 else item.Value2
 
         self.content.update({"DefaultStores":defaultstores})
 
@@ -109,7 +106,7 @@ class DscGen(object):
         dsc_parser = dsc_parser_dict.get("COMMON", list(dsc_parser_dict.values())[0])
         packages = []
         for item in dsc_parser[DC.MODEL_META_DATA_PACKAGE]:
-            packages.append(item[0])
+            packages.append(item.Value1)
 
         self.content.update({"Packages":packages})
 
@@ -148,13 +145,13 @@ class DscGen(object):
             dsc_parser = dsc_parser_dict[arch]
             l_build_opts = OrderedDict()
             for item in dsc_parser[DC.MODEL_META_DATA_BUILD_OPTION,arch]:
-                if not item[0]:
+                if not item.Value1:
                     toolchain = "COMMON"
                 else:
-                    toolchain = item[0]
-                module_type = item[5]
-                flag = item[1]
-                flagvalue = item[2]
+                    toolchain = item.Value1
+                module_type = item.Scope2
+                flag = item.Value2
+                flagvalue = item.Value3
 
                 if module_type not in l_build_opts:
                     l_build_opts[module_type] = OrderedDict()
@@ -165,6 +162,46 @@ class DscGen(object):
             build_opts[arch] = l_build_opts
 
         self.content.update({"BuildOptions":build_opts})
+
+    def Set_LibraryClasses(self, dsc_parser_dict):
+        '''
+        row = [
+            LibraryClass,
+            LibraryInstance,
+            "",
+            Arch,
+            ModuleType,
+            COMMON,
+            ID,
+            LineNo
+        ]
+        '''
+        lib_classes = OrderedDict()
+        '''
+            {
+                Arch:{
+                    ModuleType:{
+                        LibClass: LibInstance
+                    }
+                }
+            }
+        '''
+
+        for arch in dsc_parser_dict:
+            dsc_parser = dsc_parser_dict[arch]
+            l_lib_class = OrderedDict()
+            for item in dsc_parser[DC.MODEL_EFI_LIBRARY_CLASS,arch]:
+                m_arch = item.Scope1
+                module_t = item.Scope2
+                libclass = item.Value1
+                libIns = item.Value2
+                if module_t not in l_lib_class:
+                    l_lib_class[module_t] = OrderedDict()
+                l_lib_class[module_t][libclass] = libIns
+
+                lib_classes.setdefault(m_arch,OrderedDict()).update(l_lib_class)
+
+        self.content.update({"LibraryClasses":lib_classes})
 
 class Sec_Defines(object):
     DEFINE_STR = "DEFINE"
@@ -308,9 +345,34 @@ class Sec_BuildOptions(object):
 
 class Sec_LibraryClasses(object):
     def __init__(self, content):
-        ...
+        self.libraryclasses = content
+        self.tab_sp = "  "
     def __str__(self):
-        return ""
+        section_strlst = []
+        sections = OrderedDict()
+
+        for arch in self.libraryclasses:
+            for module_t in self.libraryclasses[arch]:
+                for lib_class in self.libraryclasses[arch][module_t]:
+                    lib_inst = self.libraryclasses[arch][module_t][lib_class]
+                    if module_t.upper() == "COMMON":
+                        if arch.upper() == "COMMON":
+                            sec_head = "[LibraryClasses]"
+                        else:
+                            sec_head = "[LibraryClasses.COMMON.%s]" % module_t
+                    else:
+                        sec_head = "[LibraryClasses.%s.%s]" % (arch,module_t)
+                    sections.setdefault(sec_head, OrderedDict())[lib_class] = lib_inst
+        
+        for sec_head in sections:
+            section_strlst.append(sec_head)
+            for lib_class, lib_ins in sections[sec_head].items():
+                section_strlst.append("%s%s|%s" % (self.tab_sp, lib_class, lib_ins))
+            section_strlst.append("")
+
+        return '\r\n'.join(section_strlst)
+
+
 class Sec_Components(object):
     def __init__(self, content):
         ...
